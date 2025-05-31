@@ -1,0 +1,8 @@
+home/*
+#pyenv/*
+dot_files/bash_history*
+
+config/mozilla/*
+config/BraveSoftware/*
+config/GitKraken/*
+config/themes
