@@ -1,0 +1,297 @@
+#!/bin/bash
+#
+#  Executes the conan install command and takes into account your CC/CXX variables
+#  and also sets it up for web assembly CC=$(which emcc)
+#
+#  Example: Execute in the source folder and it will generate a build folder 
+#           named COMPILER-VERSION-BUILD_TYPE
+#
+#    cd SOURCE_FOLDER
+#    conan_install
+#    
+#  Example: Execute in a build folder and build for release
+#     cd SOURCE_FOLDER
+#     mkdir build && cd build
+#     BUILD_TYPE=Release conan_install ..
+#     
+#
+# Example: Build for web assembly
+#
+#    cd SOURCE_FOLDER
+#    mkdir build && cd build
+#    export CC=$(which emcc)
+#    export CXX=$(which em++)
+#    conan_install ..
+#
+# Use default C++20
+PATH_TO_CONAN_FILE_PY=${1}
+
+
+STD=${STD:-"20"}
+ARCH=${ARCH:-"x86_64"}
+OS=${OS:-"Linux"}
+OUTPUT_DIR=$PWD
+BUILD_TYPE=${BUILD_TYPE:-"Debug"}
+PKG_BUILD_TYPE=${PKG_BUILD_TYPE:-"Release"}
+LIBCXX=${LIBCXX:-"libstdc++11"}
+
+# Used for zig builds
+ABI=${ABI:-"gnu"}
+
+CC=${CC:-"$(which gcc)"}
+CXX=${CXX:-"$(which g++)"}
+
+# Used for compiling WASM to non-web based binaries
+STANDALONE_WASM=${STANDALONE_WASM:-"0"}
+
+
+if ! command -v jq &> /dev/null; then
+    echo "Cannot find jq. This is required to be installed in the path"
+    return 1
+fi
+
+
+if [[ -f $PATH_TO_CONAN_FILE_PY ]]; then
+    PATH_TO_SOURCE=$(dirname $PATH_TO_CONAN_FILE_PY)
+else
+    PATH_TO_SOURCE=$PATH_TO_CONAN_FILE_PY
+
+fi
+
+
+if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" && $BUILD_TYPE" != "RelWithDebInfo" && $BUILD_TYPE" != "MinSizeRel" ]]; then
+    echo "Error: BUILD_TYPE must be 'Debug' or 'Release' or 'RelWithDebInfo' or 'MinSizeRel'."
+    return 1
+fi
+
+# if CC=gcc or /usr/bin/gcc,  get the base name
+# regardless
+COMPILER=$(basename $(which $(realpath ${CC})))
+
+if [[ $COMPILER == *"emcc"* ]]; then
+    # This is for WebAssembly compilations with Emscripten
+    #
+    # The emcc compiler is based on clang, but the version it
+    # reports is not the same as the clang version.
+    # So instead, we are going to look for the clang-XX binary
+    # in the same folder as the emcc binary and extract
+    # the version from that
+    #
+    # We need this version to pass into conan
+    echo "EMCC Compiler found"
+
+    CLANG_BIN=$(ls $(dirname $(which emcc))/../bin | grep clang- | sort | head -n 1)
+    COMPILER_VERSION=${CLANG_BIN//[^0-9]/}
+
+    COMPILER=clang
+    BIN_NAME=emcc
+
+    EXTRA_CMAKE_ARGS="-DEMSCRIPTEN=1"
+
+    ARCH=wasm
+    OS=Emscripten
+
+    LIBCXX=libc++
+
+    # These are needed if you are going to run using wasmtime
+    # rather than execute in a browser
+    #cxxflags=\"-s\",\"STANDALONE_WASM=1\",\"-s\", \"WASM_BIGINT\" 
+    #cflags=\"-s\",\"STANDALONE_WASM=1\", \"-s\", \"WASM_BIGINT\"
+
+#        cxxflags=\"-s\",\"STANDALONE_WASM=${STANDALONE_WASM}\",\"-s\",\"WASM_BIGINT\"
+#        cflags=\"-s\",\"STANDALONE_WASM=${STANDALONE_WASM}\",\"-s\",\"WASM_BIGINT\"
+
+else
+    
+    # COMPILER may be cc, which could be a symlink to clang or
+    # some other compiler. Find the realpath and check if its is a clang
+    # or gcc compiler
+    if [[ $(realpath $(which $CC)) == *"gcc"* ]]; then
+        #EXTRA_CONAN_ARGS="${EXTRA_CONAN_ARGS} -s compiler.libcxx=libstdc++11"
+        COMPILER=gcc
+        BIN_NAME=${COMPILER}
+    fi
+
+    if [[ $(realpath $(which $CC)) == *"clang"* ]]; then
+        #EXTRA_CONAN_ARGS="${EXTRA_CONAN_ARGS} -s compiler.libcxx=libstdc++11"
+        COMPILER=clang
+        BIN_NAME=${COMPILER}
+    fi
+
+    # The zig C compiler is actualy the zig executble called with
+    # "zig cc" or "zig c++"
+    # The problem is cmake complains if CC and CXX are pointing to
+    # an executble with an additional argument
+    # so instead, we are going to create two bash scripts, zcc and zc++
+    # which will be a passthrough to zig cc/c++
+    # and use those as the compiler executbles
+    if [[ $(realpath $(which $CC)) == *"zig"* ]]; then
+        COMPILER=clang
+
+        #EXTRA_CONAN_ARGS="${EXTRA_CONAN_ARGS} -s compiler.libcxx=libstdc++11"
+
+        ARCH_ZIG=${ARCH}
+        if [[ ${ARCH} == "armv8" ]]; then
+            ARCH_ZIG=aarch64
+        fi
+
+        if [[ ${OS} == "Windows" ]]; then
+            TARGET=${ARCH_ZIG,,}-${OS,,}-gnu
+        elif [[ ${OS} == "Macos" ]]; then
+            TARGET=${ARCH_ZIG,,}-${OS,,}
+        elif [[ ${OS} == "Linux" ]]; then
+            TARGET=${ARCH_ZIG,,}-${OS,,}-${ABI,,}
+        fi
+
+        ZIG_DIR=/tmp/zig_asdfa252sdfasdf
+
+        rm -rf ${ZIG_DIR}
+        mkdir ${ZIG_DIR}
+        
+        echo '#!/bin/bash' >> ${ZIG_DIR}/zcc
+        echo zig cc -target ${TARGET} '"$@"' >> ${ZIG_DIR}/zcc
+
+        echo '#!/bin/bash' >> ${ZIG_DIR}/zc++
+        echo zig c++ -target ${TARGET} '"$@"' >> ${ZIG_DIR}/zc++
+
+        chmod +x ${ZIG_DIR}/*
+        CC=${ZIG_DIR}/zcc
+        CXX=${ZIG_DIR}/zc++
+        BIN_NAME=zig
+    fi
+
+    COMPILER_VERSION=$(${CC} -dumpversion | cut -d. -f1)
+fi
+
+COMPILER_STD_VERSION=${STD}
+
+
+if [[ -f ${OUTPUT_DIR}/conanfile.py ]]; then
+    # If the output directory contains the conanfile then we need
+    # to make a new output directory so we dont populate the source dir
+    # with build artifacts
+    #
+    # We'll also set the CMAKE_PRESET to the compiler/version/buildtype
+    CMAKE_PRESET=${CMAKE_PRESET:-"${BIN_NAME}-${COMPILER_VERSION}-${BUILD_TYPE,,}"}
+
+    PATH_TO_CONAN_FILE_PY=${OUTPUT_DIR}
+    OUTPUT_DIR=${OUTPUT_DIR}/build-${CMAKE_PRESET}
+    echo mkdir -p ${OUTPUT_DIR}
+   
+else
+    CMAKE_PRESET=$(basename $OUTPUT_DIR)
+fi
+
+if [[ "$BIN_NAME" == "zig" ]]; then
+    mv ${CC} ${OUTPUT_DIR}/zig
+    mv ${CXX} ${OUTPUT_DIR}/zig
+
+    ZIG_DIR=${OUTPUT_DIR}/zig
+    CC=${ZIG_DIR}/zcc
+    CXX=${ZIG_DIR}/zc++
+fi
+
+
+mkdir -p ${OUTPUT_DIR}
+cat <<EOF > ${OUTPUT_DIR}/conan_host.conf
+[settings]
+arch=${ARCH}
+build_type=${PKG_BUILD_TYPE}
+compiler=${COMPILER}
+compiler.cppstd=${COMPILER_STD_VERSION}
+compiler.libcxx=${LIBCXX}
+compiler.version=${COMPILER_VERSION}
+os=${OS}
+
+[buildenv]
+CC=${CC}
+CXX=${CXX}
+
+[conf]
+tools.system.package_manager:mode=install
+tools.system.package_manager:sudo=True
+EOF
+
+echo "========================================================"
+echo "The following environment variables were used"
+echo "If you did not set them manually, they were determined from"
+echo "your CC environment variable or used default values"
+echo ""
+echo "CC              : "${CC}
+echo "CXX             : "${CXX}
+echo "COMPILER        : "${COMPILER}
+echo "COMPILER_VERSION: "${COMPILER_VERSION}
+echo "OS              : "${OS}
+echo "ARCH            : "${ARCH}
+echo "ABI             : "${ABI}  "  (for zig builds only: gnu or musl)"
+echo "STD             : "${COMPILER_STD_VERSION}
+echo "CMAKE_PRESET    : "${CMAKE_PRESET}
+echo "BUILD_TYPE      : "${BUILD_TYPE}
+echo "PKG_BUILD_TYPE  : "${PKG_BUILD_TYPE} 
+echo "SOURCE_DIR      : "${PATH_TO_CONAN_FILE_PY}
+echo "OUTPUT_DIR      : "${OUTPUT_DIR}
+echo "========================================================="
+echo "Generated Conan Host Conf:"
+echo "========================================================="
+cat ${OUTPUT_DIR}/conan_host.conf
+echo "========================================================="
+echo "The following conan command will be executed:"
+echo "========================================================="
+echo -e "\
+conan install ${PATH_TO_SOURCE}/conanfile.py \\
+      --profile:host ${OUTPUT_DIR}/conan_host.conf \\
+      -s:h \""\&:build_type=${BUILD_TYPE}\"" \\
+      -of ${OUTPUT_DIR} \\
+    "
+echo "--------------------------------------------------------"
+
+
+read -p "Press Enter to continue execute the command Ctrl-C to quit"
+#    return 1
+conan install ${PATH_TO_SOURCE}/conanfile.py \
+     --profile:host ${OUTPUT_DIR}/conan_host.conf \
+     -s:h "&:build_type=${BUILD_TYPE}" \
+     --build=missing ${EXTRA_CONAN_ARGS} \
+     -of ${OUTPUT_DIR} 
+
+if [ ! $? -eq 0 ]; then
+    echo "Failed to execute conan!"
+    echo ""
+    echo ""
+    echo -e " \
+    conan install ${PATH_TO_SOURCE}/conanfile.py \\
+        --profile ${OUTPUT_DIR}/conan_host.conf \\
+        -s:h \""&:build_type=${BUILD_TYPE}\"" \\
+        -of ${OUTPUT_DIR} \\
+        "
+    exit 1
+fi
+
+# There is no way to set the preset name that is generated
+# from the command line. So use some bash trickery to modify the
+# output CmakePresets.json file to replace the name with the one
+# we want
+#
+# Find the name of the preset that was generated 
+CMAKEPRESETFILE=$(find ${OUTPUT_DIR} | grep CMakePresets.json)
+if [[ ! -f ${CMAKEPRESETFILE} ]]; then
+    echo "ERROR: Could not find the CMakePresets.json file"
+    exit 1
+fi
+
+oldpreset=$(cat ${CMAKEPRESETFILE}  | jq .buildPresets[0].name |  tr -d '"')
+
+# And replace it with a more appropriate one
+sed -i "s/${oldpreset}/${CMAKE_PRESET}/g" ${CMAKEPRESETFILE}
+
+shift
+echo ========================================================    
+echo Execute: cmake ${PATH_TO_SOURCE} --preset ${CMAKE_PRESET}  ${EXTRA_CMAKE_ARGS} "$@"
+echo ========================================================
+echo ""
+echo ""
+read -p "Press Enter to execute the command or Ctrl-C to exit"
+CC=${CC} CXX=${CXX} cmake ${PATH_TO_SOURCE} --preset ${CMAKE_PRESET}  ${EXTRA_CMAKE_ARGS}
+
+
+

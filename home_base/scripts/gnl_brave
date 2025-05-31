@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+CACHE_FOLDER=$HOME/.config/BraveSoftware
+if [[ ! -e ${CACHE_FOLDER} ]]; then
+    mkdir ${CACHE_FOLDER};
+fi;
+
+CONFIG=${1:-"default"}
+#notify-send ${CONFIG}
+brave-browser-nightly --user-data-dir="$CACHE_FOLDER/brave-${CONFIG}-data"
+

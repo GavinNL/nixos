@@ -1,0 +1,164 @@
+#######################################################################################
+# This file should be modified for your own use. 
+# you should create a symlink in $HOME/source.me
+#######################################################################################
+SOURCE=${BASH_SOURCE[0]}
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+  SOURCE=$(readlink "$SOURCE")
+  [[ $SOURCE != /* ]] && SOURCE=$DIR/$SOURCE # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+#######################################################################################
+
+
+#export PATH=$DIR/bin:$PATH
+
+export GNL_PREFIX_FOLDER=$HOME/Apps
+export GNL_PCLOUD_PUBLIC_URL=https://filedn.eu/l0rnKqYfU3SSI61WTa9844f
+
+HOMEBASE=$HOME/.nixos/home_base
+
+SCRIPTS_FOLDER=${HOMEBASE}/scripts
+
+PY_ENV_FOLDER=${HOMEBASE}/pyenv
+
+#######################################################################################
+# HOST IP Addresses
+#######################################################################################
+export GNL_BRAINIAC_IP=192.168.1.111
+export GNL_AMAZO_IP=192.168.1.114
+export GNL_ANDROID_IP=192.168.1.88
+export GNL_ANDROID_USER=ua_a585
+#######################################################################################
+
+
+alias cdh="cd /mnt/oa/home"
+
+
+gnl_scratch()
+{
+    SCRATCH=/mnt/oa/home/gavin/Scratch
+    NAME=$1
+    if [[ "$1" == "" ]]; then
+        NAME=$(date +"%Y%m%d%H%M%S")
+    fi
+
+    mkdir -p ${SCRATCH}/${NAME}
+    cd ${SCRATCH}/${NAME}
+}
+
+
+gnl_notifyPhone() {
+    curl -d "$@" ntfy.sh/3c501e55f486dad59136
+}
+
+
+gnl_android_ssh() {
+    ssh ${GNL_ANDROID_USER}@${GNL_ANDROID_IP} -p 8022
+}
+
+gnl_sync_android()
+{
+    ANDROID_HOME=/data/data/com.termux/files/home
+    rsync -avz --info=progress2 -e "ssh -p 8022" ${GNL_ANDROID_USER}@${GNL_ANDROID_IP}:${ANDROID_HOME}/Camera/Camera  phone
+}
+
+gnl_mount_android() {
+
+    MNT_PATH=$HOME/.local/mnt/android
+    mkdir -p $MNT_PATH
+
+    if [ "$(stat -c %d $MNT_PATH)" != "$(stat -c %d $MNT_PATH/..)" ]; then
+
+      echo "$MNT_PATH is a mount point"
+
+    else
+
+        sshfs u0_a585@192.168.1.88:/data/data/com.termux/files/home $MNT_PATH -p 8022
+        ln -sf $MNT_PATH $HOME/Android
+    fi
+
+
+}
+
+
+#######################################################################################
+
+if [ $TILIX_ID ] || [ $VTE_VERSION ]; then
+    if [[ -f /etc/profile.d/vte-2.91.sh ]]; then
+        source /etc/profile.d/vte-2.91.sh
+    fi
+fi
+
+
+#if [[ "$(which rclone)" != "/usr/local/bin/rclone" ]]; then
+#   echo rclone not installed at /usr/local/bin/rclone. Install it please
+#fi
+
+
+#######################################################################################
+# Source all files in the source.d folder
+#######################################################################################
+if [ -d "$DIR"/source.d ]; then 
+   for FILE in "$DIR"/source.d/*.sh; do
+     if [ -f "$FILE" ]; then
+       #echo "Sourcing $FILE"
+       source "$FILE"
+     else
+       echo "No .sh files found in $FOLDER."
+       break
+     fi
+   done
+fi
+#######################################################################################
+
+
+#######################################################################################
+function gnl_brainiac() {
+   ssh gavin@${GNL_BRAINIAC_IP}
+}
+
+
+if [[ "${CONTAINER_ID}" != "" ]]; then
+    if [[ -f ${PY_ENV_FOLDER}/${CONTAINER_ID}/requirements.txt ]]; then
+        PY_ENV=${PY_ENV_FOLDER}/${CONTAINER_ID}
+    fi
+else
+    if [[ -f ${PY_ENV_FOLDER}/$HOSTNAME/requirements.txt ]]; then
+        PY_ENV=${PY_ENV_FOLDER}/${HOSTNAME}
+    fi
+fi 
+
+if [[ ! -f ${PY_ENV}/pyvenv.cfg && -f ${PY_ENV}/requirements.txt  ]]; then
+    echo "Creating Python Virtual Env at $PY_ENV"
+    python3 -m venv ${PY_ENV}
+    source ${PY_ENV}/bin/activate
+    pip3 install --upgrade pip
+    pip3 install -r ${PY_ENV}/requirements.txt
+    deactivate
+fi
+
+if [[ -f ${PY_ENV}/bin/activate ]]; then
+    source ${PY_ENV}/bin/activate
+fi
+
+
+if [[ -f $HOME/Apps/emsdk/emsdk_env.sh ]]; then
+    EMSDK_QUIET=1 source $HOME/Apps/emsdk/emsdk_env.sh
+fi
+
+if [[ -d $(realpath "${SCRIPTS_FOLDER}") ]]; then
+    export PATH=${SCRIPTS_FOLDER}:$PATH
+fi
+
+if [[ "${CONTAINER_ID}" != "" ]]; then
+    if [[ -f $(realpath "$HOME/Apps/Vulkan/latest/setup-env.sh") ]]; then
+        source $HOME/Apps/Vulkan/latest/setup-env.sh
+    fi
+fi 
+
+
+
+
+
