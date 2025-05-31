@@ -6,5 +6,5 @@ config/mozilla/*
 config/BraveSoftware/*
 config/GitKraken/*
 config/themes
-
+dot_files/rclone.conf
 

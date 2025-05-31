@@ -21,6 +21,12 @@
           ./amazo/amazo.nix
           ./common/common.nix
 
+          ###############################################
+          # NOT WORKING  
+          ###############################################
+          # ./modules/hyprland.nix
+          ################################################
+
           # Modules for specific desktop
           # environments. Can enable to disable
           # as many of these as you want  
