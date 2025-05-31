@@ -11,12 +11,13 @@
     };
   };
 
-  outputs = { nixpkgs, unstable, ... }:
+  outputs = { nixpkgs, unstable, ... } @ inputs :
     let
       system = "x86_64-linux";
     in {
       nixosConfigurations.amazo = nixpkgs.lib.nixosSystem {
         inherit system;
+        specialArgs = { inherit inputs; };
         modules = [
           ./amazo/amazo.nix
           ./common/common.nix
@@ -24,7 +25,7 @@
           ###############################################
           # NOT WORKING  
           ###############################################
-          # ./modules/hyprland.nix
+          ./modules/hyprland.nix
           ################################################
 
           # Modules for specific desktop
@@ -43,9 +44,9 @@
 
           ./modules/steam.nix  
         ];
-        specialArgs = {
-          unstablePkgs = unstable.legacyPackages.${system};
-        };
+        #specialArgs = {
+        #  unstablePkgs = unstable.legacyPackages.${system};
+        #};
       };
     };
 }
