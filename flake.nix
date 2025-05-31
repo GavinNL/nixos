@@ -34,6 +34,8 @@
           # Creates an rclone mount point at /mnt/storage
           # for gavin's rclone conf. /home/gavin/.rclone.conf must exist  
           ./modules/cloud_mount.nix
+
+          ./modules/steam.nix  
         ];
         specialArgs = {
           unstablePkgs = unstable.legacyPackages.${system};

@@ -127,6 +127,7 @@
         vscodium
         obsidian
         gitkraken
+        brave
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
