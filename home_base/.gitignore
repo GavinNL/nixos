@@ -1,4 +1,19 @@
-home/*
+home/Apps/*
+home/Desktop/*
+home/Documents/*
+home/Downloads/*
+home/Music/*
+home/Pictures/*
+home/Projects/*
+home/Public/*
+home/Templates/*
+home/Videos/*
+home/.conan2/p
+home/.gitkraken
+home/.conan2
+home/.ssh
+
+
 pyenv/*
 dot_files/bash_history*
 
@@ -6,5 +21,6 @@ config/mozilla/*
 config/BraveSoftware/*
 config/GitKraken/*
 config/themes
+
 dot_files/rclone.conf
 

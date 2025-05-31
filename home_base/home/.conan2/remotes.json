@@ -1,0 +1,14 @@
+{
+ "remotes": [
+  {
+   "name": "conancenter",
+   "url": "https://center2.conan.io",
+   "verify_ssl": true
+  },
+  {
+   "name": "home",
+   "url": "https://conan.lobo.onl",
+   "verify_ssl": false
+  }
+ ]
+}
