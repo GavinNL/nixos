@@ -126,6 +126,7 @@
         protonup-qt
         vscodium
         obsidian
+        gitkraken
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
