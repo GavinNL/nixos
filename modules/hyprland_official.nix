@@ -27,9 +27,10 @@
                  #   fi
                  #
 
-    # Application launcher
-    rofi-wayland
-
+                 
+	swaynotificationcenter # Notifications
+	walker # another app launcher
+	
     # Terminal emulator
     kitty
 
