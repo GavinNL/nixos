@@ -171,6 +171,9 @@
     keepassxc
     tilix
 
+    # Alternative to startx/xinit
+    sx
+
     # Fixes some erros with glib
     gvfs
     glib

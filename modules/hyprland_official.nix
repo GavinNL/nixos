@@ -10,22 +10,38 @@
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   #  wget
+
     hyprland
-    hyprlandPlugins.hyprbars
-    hyprlandPlugins.hyprexpo
+    hyprshot     # screen shot
+    hyprcursor   # ??
+    hyprpaper    # Set wallpapers
+    hyprlock     # Lock screen
+    hypridle     # Idle checking
+
+    waybar       # Create status bar at the top of the page
+    starship     # Make your terminal prompts look cool
+                 # Requires adding this to your bash_rc
+                 #
+                 #   if command -v starship >/dev/null ; then
+                 #       eval "$(starship init bash)"
+                 #   fi
+                 #
+
+    # Application launcher
     rofi-wayland
-    waybar
-    hyprshot
-    hyprcursor
-    hyprpaper
-    hyprlock
-    hypridle
-    mako
-    libnotify
-    networkmanagerapplet
-    starship
+
+    # Terminal emulator
     kitty
-    nwg-look
+
+    #hyprlandPlugins.hyprbars
+    #hyprlandPlugins.hyprexpo
+    libnotify
+
+    networkmanagerapplet
+
+    wlogout
+    wl-clipboard
+    pavucontrol
   ];
 
   xdg.portal.enable = true;
