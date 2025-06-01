@@ -14,6 +14,8 @@ with lib; let
     name = "hyrpland-plugins";
     paths = with hyprPluginPkgs; [
       hyprexpo
+      hyprbars
+#      hyprpanel
       #...plugins
     ];
   };

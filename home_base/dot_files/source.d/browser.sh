@@ -59,8 +59,13 @@ gnl_tempbrave() {
     if [[ ! -e ${CACHE_FOLDER} ]]; then
          mkdir ${CACHE_FOLDER}
     fi
+    bin_="brave"
+    if [[ ! $(which brave-browser-nightly) = "" ]]; then
+        bin_="brave-browser-nightly"
+    fi
+
     rm -rf $CACHE_FOLDER/brave-temp-data
-    brave-browser-nightly --incognito --user-data-dir="$CACHE_FOLDER/brave-temp-data"
+    $bin_ --incognito --user-data-dir="$CACHE_FOLDER/brave-temp-data"
     rm -rf $CACHE_FOLDER/brave-temp-data
 }
 

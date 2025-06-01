@@ -25,7 +25,8 @@
           ###############################################
           # NOT WORKING  
           ###############################################
-          ./modules/hyprland.nix
+          #./modules/hyprland.nix
+          ./modules/hyprland_official.nix
           ################################################
 
           # Modules for specific desktop
