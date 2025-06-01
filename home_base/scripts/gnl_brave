@@ -6,5 +6,11 @@ fi;
 
 CONFIG=${1:-"default"}
 #notify-send ${CONFIG}
-brave-browser-nightly --user-data-dir="$CACHE_FOLDER/brave-${CONFIG}-data"
+
+brave=brave-browser-nightly
+if ! command -v $brave >/dev/null  ; then
+	brave=brave
+fi
+
+$brave --user-data-dir="$CACHE_FOLDER/brave-${CONFIG}-data"
 
