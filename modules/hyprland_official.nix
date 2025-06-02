@@ -30,7 +30,7 @@
                  
     inputs.hyprpanel.packages.${pkgs.system}.wrapper
 
-	swaynotificationcenter # Notifications
+#	swaynotificationcenter # Notifications
 	walker # another app launcher
 	
     # Terminal emulator
