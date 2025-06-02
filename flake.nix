@@ -9,15 +9,21 @@
       url = "github:hyprwm/hyprland-plugins";
       inputs.hyprland.follows = "hyprland";
     };
+    hyprpanel = {
+      url = "github:Jas-SinghFSU/HyprPanel";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, unstable, ... } @ inputs :
+  outputs = { self, hyprpanel, nixpkgs, unstable, ... } @ inputs :
     let
       system = "x86_64-linux";
     in {
       nixosConfigurations.amazo = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit inputs; };
+        specialArgs = { 
+            inherit inputs; 
+        };
         modules = [
           ./amazo/amazo.nix
           ./common/common.nix

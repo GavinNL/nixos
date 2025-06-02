@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }:
+{ config, inputs, pkgs, ... }:
 
 {
   programs.hyprland.enable = true;
@@ -28,6 +28,8 @@
                  #
 
                  
+    inputs.hyprpanel.packages.${pkgs.system}.wrapper
+
 	swaynotificationcenter # Notifications
 	walker # another app launcher
 	
