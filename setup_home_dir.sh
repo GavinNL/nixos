@@ -129,8 +129,9 @@ done
 
 mksymlink  ${DOT_FILES}/bash_aliases   ${HOME}/.bash_aliases
 mksymlink  ${DOT_FILES}/bashrc         ${HOME}/.bashrc
-mksymlink  ${DOT_FILES}/bash_history   ${HOME}/.bash_history
+#mksymlink  ${DOT_FILES}/bash_history   ${HOME}/.bash_history
 mksymlink  ${DOT_FILES}/profile        ${HOME}/.profile
+mksymlink  ${DOT_FILES}/gitconfig      ${HOME}/.gitconfig
 
 
 
