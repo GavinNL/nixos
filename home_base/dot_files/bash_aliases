@@ -144,9 +144,10 @@ if [[ -f ${PY_ENV}/bin/activate ]]; then
 fi
 
 
-if [[ -f $HOME/Apps/emsdk/emsdk_env.sh ]]; then
-    EMSDK_QUIET=1 source $HOME/Apps/emsdk/emsdk_env.sh
-fi
+#if [[ -f $HOME/Apps/emsdk/emsdk_env.sh ]]; then
+#    EMSDK_QUIET=1 source $HOME/Apps/emsdk/emsdk_env.sh
+#fi
+alias EMCC="EMSDK_QUIET=1 source $HOME/Apps/emsdk/emsdk_env.sh"
 
 if [[ -d $(realpath "${SCRIPTS_FOLDER}") ]]; then
     export PATH=${SCRIPTS_FOLDER}:$PATH
