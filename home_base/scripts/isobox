@@ -1,0 +1,121 @@
+#!/bin/bash
+#######################################################################################
+FILE_LOCATION="${BASH_SOURCE[0]}"
+while [ -h "$FILE_LOCATION" ]; do # resolve $FILE_LOCATION until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$FILE_LOCATION" )" >/dev/null 2>&1 && pwd )"
+  FILE_LOCATION="$(readlink "$FILE_LOCATION")"
+  [[ $FILE_LOCATION != /* ]] && FILE_LOCATION="$DIR/$FILE_LOCATION" # if $FILE_LOCATION was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+
+SOURCE_DIR="$( cd -P "$( dirname "$FILE_LOCATION" )" >/dev/null 2>&1 && pwd )"
+THIS=$FILE_LOCATION
+#######################################################################################
+
+IMAGE=ubuntu:24.04
+
+HOME_STORAGE=$HOME/iso
+
+function create()
+{
+    echo create
+}
+
+function enter()
+{
+    if [[ "$(podman ps | grep iso_${NAME} | wc -l)" == "0" ]] ;then
+        start $1
+    fi
+
+    NAME=$1
+    shift
+    if [[ "$1" == "" ]];  then
+        CMD=/bin/bash
+    else
+        CMD="$@"
+    fi
+    echo "Entering container iso_${1}"
+    podman exec -it --user $(id -u):$(id -g) --env SHELL=/usr/bin/bash --workdir=$HOME iso_${NAME} ${CMD}
+}
+
+function start()
+{
+    echo "Starting container iso_${1}"
+    podman start iso_${1}
+}
+
+function show_help()
+{
+    echo help
+}
+##################################
+
+if [[ "$1" == "enter" ]]; then
+    shift
+    enter "$@"
+    exit 0
+fi
+
+
+if [[ "$1" == "create" ]]; then
+    shift
+    NAME=$1
+    if [[ ${NAME} == "" ]]; then
+        echo "No name selected"
+        exit 1;
+    fi
+
+    ISO_HOME=${HOME_STORAGE}/${NAME}
+    mkdir -p ${ISO_HOME}
+
+    podman create -it --name iso_${NAME} \
+                    --userns=keep-id \
+                    --user 0:0 \
+                    --net host \
+                    --hostname ${NAME} \
+                    --volume ${ISO_HOME}:$HOME \
+                    --volume $THIS:/tmp/startup.sh \
+                    --volume $XAUTHORITY:/tmp/isobox/.Xauthority \
+                    --env HOST_UID=$(id -u) \
+                    --env HOST_GID=$(id -g) \
+                    --env CONTAINER_ID=true \
+                    --env OWNER=$USER \
+                    --env XAUTHORITY=/tmp/isobox/.Xauthority \
+                    --env DISPLAY=$DISPLAY \
+                    ${IMAGE} /bin/bash /tmp/startup.sh
+
+    podman start -ai iso_${NAME}
+
+    echo "Container initialized! Starting container"
+    start ${NAME}
+
+    enter ${NAME} /bin/bash
+
+    exit 0
+fi
+
+while [[ -e /.isobox_lock_file ]]; do
+    sleep 3600
+done
+
+##############################################################
+# Minimal setup of an Ubuntu container
+#  - install sudo
+#  - create new user
+#  - make user sudoer with no password
+#  - create lockfile
+##############################################################
+echo "##############################################################"
+echo " Setting up container"
+echo "##############################################################"
+
+apt update
+apt install -y sudo
+userdel ubuntu
+rm -rf /home/*
+cp -r /etc/skel/.* /home/${OWNER}
+chown -R ${HOST_UID}:${HOST_GID} /home/${OWNER}
+useradd -d /home/${OWNER} ${OWNER}
+usermod -aG sudo ${OWNER}
+echo "$OWNER ALL=(ALL:ALL) NOPASSWD: ALL" | tee /etc/sudoers.d/$OWNER
+touch /.isobox_lock_file
+##############################################################
