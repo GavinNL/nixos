@@ -28,26 +28,32 @@
           ./amazo/amazo.nix
           ./common/common.nix
 
-          ###############################################
-          # NOT WORKING  
-          ###############################################
-          #./modules/hyprland.nix
-          ./modules/hyprland_official.nix
           ################################################
-
           # Modules for specific desktop
           # environments. Can enable to disable
           # as many of these as you want  
+          ################################################
           ./modules/desktop_cinnamon.nix
+          ./modules/desktop_cosmic.nix
+          ./modules/desktop_niri.nix
+          ./modules/hyprland_official.nix
+          ################################################
 
+          ################################################
           # Choose only one of the following
           # depending on what version of driver you 
           # need   
+          ################################################
           ./modules/nvidia_closed_570.nix
+          ################################################
 
+          ################################################
           # Creates an rclone mount point at /mnt/storage
-          # for gavin's rclone conf. /home/gavin/.rclone.conf must exist  
+          # for gavin's rclone conf. /home/gavin/.rclone.conf 
+          #  must exist  
+          ################################################
           ./modules/cloud_mount.nix
+          ################################################
 
           ./modules/steam.nix  
         ];

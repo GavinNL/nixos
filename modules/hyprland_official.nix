@@ -27,11 +27,20 @@
                  #   fi
                  #
 
-                 
-    inputs.hyprpanel.packages.${pkgs.system}.wrapper
 
-#	swaynotificationcenter # Notifications
+	################  Hyprpanel ################
+	# Contains Notifications daemon also                 
+#    inputs.hyprpanel.packages.${pkgs.system}.wrapper
+    #############################################
+
+	swaynotificationcenter # Notifications
 	walker # another app launcher
+	nwg-look # lets you Set your  your GTK theme
+	nwg-dock-hyprland
+	nwg-drawer
+	nwg-panel
+	nwg-icon-picker
+	nwg-bar
 	
     # Terminal emulator
     kitty

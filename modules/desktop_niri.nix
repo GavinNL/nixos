@@ -6,12 +6,17 @@
 
 {
   programs.hyprland.enable = true;
+  programs.niri.enable = true;
+  programs.xwayland.enable = true;
 
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   #  wget
     niri
-    
+    fuzzel    
+    xwayland-satellite
+    xwayland
+    xwayland-run
   ];
 
   xdg.portal.enable = true;
