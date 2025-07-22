@@ -74,7 +74,8 @@ if [[ "$1" == "create" ]]; then
                     --hostname ${NAME} \
                     --volume ${ISO_HOME}:$HOME \
                     --volume $THIS:/tmp/startup.sh \
-                    --volume $XAUTHORITY:/tmp/isobox/.Xauthority \
+                    --volume $XAUTHORITY:/tmp/isobox/.Xauthority \ 
+                    --env ISOBOX_ID=HELLO_WORLD
                     --env HOST_UID=$(id -u) \
                     --env HOST_GID=$(id -g) \
                     --env CONTAINER_ID=true \
@@ -107,7 +108,8 @@ done
 echo "##############################################################"
 echo " Setting up container"
 echo "##############################################################"
-
+echo $ISOBOX_ID
+exit 0
 apt update
 apt install -y sudo
 userdel ubuntu
