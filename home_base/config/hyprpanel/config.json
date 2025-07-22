@@ -53,5 +53,9 @@
   "theme.bar.buttons.separator.width": "0.1em",
   "theme.bar.buttons.separator.margins": "0.15em",
   "theme.bar.buttons.style": "split",
-  "menus.dashboard.shortcuts.right.shortcut3.command": "hyprshot -m region --clipboard-only"
+  "menus.dashboard.shortcuts.right.shortcut3.command": "hyprshot -m region --clipboard-only",
+  "menus.dashboard.shortcuts.left.shortcut1.command": "brave",
+  "menus.dashboard.shortcuts.left.shortcut1.icon": "󰇩",
+  "menus.dashboard.shortcuts.left.shortcut2.command": "distrobox enter ubuntu-nvidia -- qtcreator",
+  "menus.dashboard.shortcuts.left.shortcut2.tooltip": "QtCreator"
 }

@@ -13,10 +13,10 @@ home/.gitkraken
 home/.conan2
 home/.ssh
 
-
 pyenv/*
 dot_files/bash_history*
 
+config/google-chrome/*
 config/mozilla/*
 config/BraveSoftware/*
 config/GitKraken/*
