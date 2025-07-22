@@ -160,9 +160,9 @@ if [[ "${CONTAINER_ID}" != "" ]]; then
 fi 
 
 
-if command -v starship >/dev/null ; then
-    eval "$(starship init bash)"
-fi
+#if command -v starship >/dev/null ; then
+#    eval "$(starship init bash)"
+#fi
 
 
-
+alias dandy="cd $HOME/Projects/Work/Dandy/TEST/WASM"
