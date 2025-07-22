@@ -80,29 +80,35 @@ if [[ $COMPILER == *"emcc"* ]]; then
     # We need this version to pass into conan
     echo "EMCC Compiler found"
 
-    CLANG_BIN=$(ls $(dirname $(which emcc))/../bin | grep clang- | sort | head -n 1)
-    COMPILER_VERSION=${CLANG_BIN//[^0-9]/}
+    EM_SDK=$(realpath $(dirname $(realpath $(which emcc)))/../..)
 
-    COMPILER=clang
+    EMTOOLCHAIN=$(find ${EM_SDK} | grep Emscripten.cmake)
+
+#    CLANG_BIN=$(ls $(dirname $(which emcc))/../bin | grep clang- | sort | head -n 1)
+#    COMPILER_VERSION=${CLANG_BIN//[^0-9]/}
+#    COMPILER=clang
     BIN_NAME=emcc
 
-    EXTRA_CMAKE_ARGS="-DEMSCRIPTEN=1"
+    EXTRA_CMAKE_ARGS=""
+
+    # emscripten does not use libc++11
+    LIBCXX=libc++
+
+    EXTRA_TOOL_CHAIN=\"${EMTOOLCHAIN}\"
 
     ARCH=wasm
     OS=Emscripten
-
-    LIBCXX=libc++
-
-    # These are needed if you are going to run using wasmtime
-    # rather than execute in a browser
-    #cxxflags=\"-s\",\"STANDALONE_WASM=1\",\"-s\", \"WASM_BIGINT\" 
-    #cflags=\"-s\",\"STANDALONE_WASM=1\", \"-s\", \"WASM_BIGINT\"
-
-#        cxxflags=\"-s\",\"STANDALONE_WASM=${STANDALONE_WASM}\",\"-s\",\"WASM_BIGINT\"
-#        cflags=\"-s\",\"STANDALONE_WASM=${STANDALONE_WASM}\",\"-s\",\"WASM_BIGINT\"
+    COMPILER=emcc
+    COMPILER_VERSION=$(emcc -dumpversion)
+    CONAN_EXTRA_BUILD_ENV="AR=emar
+NM=emnm
+RANLIB=emranlib
+STRIP=emstrip
+"
 
 else
     
+    EXTRA_TOOL_CHAIN=""
     # COMPILER may be cc, which could be a symlink to clang or
     # some other compiler. Find the realpath and check if its is a clang
     # or gcc compiler
@@ -202,14 +208,19 @@ compiler.cppstd=${COMPILER_STD_VERSION}
 compiler.libcxx=${LIBCXX}
 compiler.version=${COMPILER_VERSION}
 os=${OS}
+${CONAN_EXTRA_SETTINGS}
 
 [buildenv]
 CC=${CC}
 CXX=${CXX}
+${CONAN_EXTRA_BUILD_ENV}
 
 [conf]
+tools.cmake.cmaketoolchain:user_toolchain=[${EXTRA_TOOL_CHAIN}]
+tools.build:compiler_executables={'c':'${CC}','cpp':'${CXX}'}
 tools.system.package_manager:mode=install
 tools.system.package_manager:sudo=True
+${CONAN_EXTRA_CONF}
 EOF
 
 echo "========================================================"
@@ -231,7 +242,7 @@ echo "PKG_BUILD_TYPE  : "${PKG_BUILD_TYPE}
 echo "SOURCE_DIR      : "${PATH_TO_CONAN_FILE_PY}
 echo "OUTPUT_DIR      : "${OUTPUT_DIR}
 echo "========================================================="
-echo "Generated Conan Host Conf:"
+echo "Generated Conan Host Conf: ${OUTPUT_DIR}/conan_host.conf"
 echo "========================================================="
 cat ${OUTPUT_DIR}/conan_host.conf
 echo "========================================================="
@@ -252,7 +263,8 @@ conan install ${PATH_TO_SOURCE}/conanfile.py \
      --profile:host ${OUTPUT_DIR}/conan_host.conf \
      -s:h "&:build_type=${BUILD_TYPE}" \
      --build=missing ${EXTRA_CONAN_ARGS} \
-     -of ${OUTPUT_DIR} 
+     -of ${OUTPUT_DIR} \
+     -g CMakeToolchain
 
 if [ ! $? -eq 0 ]; then
     echo "Failed to execute conan!"
@@ -261,7 +273,7 @@ if [ ! $? -eq 0 ]; then
     echo -e " \
     conan install ${PATH_TO_SOURCE}/conanfile.py \\
         --profile ${OUTPUT_DIR}/conan_host.conf \\
-        -s:h \""&:build_type=${BUILD_TYPE}\"" \\
+        -s:h \""\&:build_type=${BUILD_TYPE}\"" \\
         -of ${OUTPUT_DIR} \\
         "
     exit 1
@@ -291,7 +303,7 @@ echo ========================================================
 echo ""
 echo ""
 read -p "Press Enter to execute the command or Ctrl-C to exit"
-CC=${CC} CXX=${CXX} cmake ${PATH_TO_SOURCE} --preset ${CMAKE_PRESET}  ${EXTRA_CMAKE_ARGS}
+CC=${CC} CXX=${CXX} cmake ${PATH_TO_SOURCE} --preset ${CMAKE_PRESET}  ${EXTRA_CMAKE_ARGS} "$@"
 
 
 
